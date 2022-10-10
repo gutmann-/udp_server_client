@@ -17,6 +17,7 @@ use std::{
     num::NonZeroU32,
     time::Duration,
 };
+use itertools::Itertools;
 
 use governor::Quota;
 use crate::consts::*;
@@ -67,6 +68,11 @@ fn collect_packets(files: &'_ Vec<PacketsSource>) -> Vec<Packet<'_>> {
 #[async_std::main]
 async fn main() {
     let cli = Cli::parse();
+    let files_to_send_str = cli.files
+        .iter()
+        .map(|path| format!("'{}'", path))
+        .join(", ");
+    println!("Sending files: {}...", files_to_send_str);
 
     let files = open_files(&cli.files);
 
