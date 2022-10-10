@@ -11,7 +11,12 @@ use async_std::net::UdpSocket;
 
 use clap::Parser;
 use rand::{thread_rng, seq::SliceRandom};
-use std::{cmp, fs::File, num::NonZeroU32};
+use std::{
+    cmp,
+    fs::File,
+    num::NonZeroU32,
+    time::Duration,
+};
 
 use governor::Quota;
 use crate::consts::*;
@@ -26,6 +31,8 @@ struct Cli {
     port: u16,
     #[arg(long, default_value_t = DEFAULT_SPEED_LIMIT.try_into().unwrap())]
     speed_limit: u32,
+    #[arg(long, default_value_t = 1000)]
+    timeout: u64,
 
     files: Vec<String>,
 }
@@ -77,6 +84,7 @@ async fn main() {
 
     let speed_limit = cmp::max(cli.speed_limit, MAX_DATAGRAM_SIZE.try_into().unwrap());
     let quota = Quota::per_second(NonZeroU32::new(speed_limit).unwrap());
-    let sender = PacketsSender::new(packets, quota);
+    let timeout = Duration::from_millis(cli.timeout);
+    let sender = PacketsSender::new(packets, quota, timeout);
     sender.send(socket).await;
 }
